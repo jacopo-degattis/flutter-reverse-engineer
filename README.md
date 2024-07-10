@@ -235,3 +235,7 @@ As we have seen this is a long process and not always that easy to achieve.
 In fact we also have to consider the possibility that the source code can be `obfuscated` and in that case it's really problematic to reverse engineer the code.
 
 If everything goes the right way now we can simply `inject` a permanent script inside the apk and have a fully functional mod.
+
+## Sources
+
+- https://www.youtube.com/watch?v=RtKOe8HQy8Q

@@ -229,12 +229,20 @@ $ frida -U -l <LOCATION_OF_BLUTTER_FRIDA.JS> -f <NAME_OF_YOUR_APP_PACKAGE>
 
 We should see that our variable has changed.
 
-### Conclusions
+## Conclusions
 
 As we have seen this is a long process and not always that easy to achieve.
 In fact we also have to consider the possibility that the source code can be `obfuscated` and in that case it's really problematic to reverse engineer the code.
 
 If everything goes the right way now we can simply `inject` a permanent script inside the apk and have a fully functional mod.
+
+## Examples
+
+In this guide I used a mod I wrote for the "alexbooks" application but I also
+added in this repository another mod for the journal app "internazionale", here's the differences:
+
+- [Alexbooks](./patches/alexbooks_mod.js): mod to provided premium features for free
+- [Internazionale](./patches/internazionale_mod.js): mod to read all article for free, even the paid ones
 
 ## Sources
 

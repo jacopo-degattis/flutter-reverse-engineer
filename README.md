@@ -242,7 +242,7 @@ In this guide I used a mod I wrote for the "alexbooks" application but I also
 added in this repository another mod for the journal app "internazionale", here's the differences:
 
 - [Alexbooks](./patches/alexbooks_mod.js): mod to provided premium features for free
-- [Internazionale](./patches/internazionale_mod.js): mod to read all article for free, even the paid ones
+- [Internazionale](./patches/internazionale_mod.js): mod to read all article for free, even the paid ones. Also block new updates and show popup on app launch
 
 ## Sources
 

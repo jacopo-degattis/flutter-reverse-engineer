@@ -2,6 +2,112 @@ const ShowNullField = false;
 const MaxDepth = 5;
 var libapp = null;
 
+function toUTF8Array(str) {
+  var utf8 = [];
+  for (var i = 0; i < str.length; i++) {
+      var charcode = str.charCodeAt(i);
+      if (charcode < 0x80) utf8.push(charcode);
+      else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6), 
+                    0x80 | (charcode & 0x3f));
+      }
+      else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12), 
+                    0x80 | ((charcode >> 6) & 0x3f), 
+                    0x80 | (charcode & 0x3f));
+      }
+      // surrogate pair
+      else {
+          i++;
+          charcode = 0x10000 + (((charcode & 0x3ff) << 10)
+                    | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >> 18), 
+                    0x80 | ((charcode >> 12) & 0x3f), 
+                    0x80 | ((charcode >> 6) & 0x3f), 
+                    0x80 | (charcode & 0x3f));
+      }
+  }
+  return utf8;
+}
+
+function bypassAppUpdates() {
+  // Locate the class to be hooked
+  var HttpsURLConnectionImpl = Java.use('com.android.okhttp.internal.huc.HttpsURLConnectionImpl');
+
+  // Hook the getInputStream method
+  HttpsURLConnectionImpl.getInputStream.implementation = function () {
+    // console.log('HttpsURLConnectionImpl.getInputStream called for URL: ' + this.getURL().toString());
+
+    // Call the original getInputStream method
+    var inputStream = this.getInputStream();
+
+    // Read and log the response body
+    var BufferedReader = Java.use('java.io.BufferedReader');
+    var InputStreamReader = Java.use('java.io.InputStreamReader');
+    var ByteArrayInputStream = Java.use('java.io.ByteArrayInputStream');
+
+    var reader = BufferedReader.$new(InputStreamReader.$new(inputStream));
+    var response = '';
+    var line;
+
+    // Accumulate response value
+    while ((line = reader.readLine()) != null) {
+        response += line + '\n';
+    }
+
+    const url = this.getURL();
+    const targetEndpoint = "https://firebaseremoteconfig.googleapis.com/v1/projects/818622449369/namespaces/firebase:fetch";
+    
+    if (url == targetEndpoint) {
+      try {
+        // Parse and edit the object to remove "mandatory" update entries
+        const parsedObject = JSON.parse(response.toString());
+        delete parsedObject["entries"];
+        parsedObject["state"] = "NO_CHANGE";
+        response = JSON.stringify(parsedObject);
+
+        // Convert stringified object to bytes before sending them
+        const bytes = toUTF8Array(response);
+
+        // Create a Java byte array from the JavaScript array
+        var JavaByteArray = Java.array('byte', bytes);
+
+        // Create a new input stream with the same data to pass it back to the application
+        var newInputStream = ByteArrayInputStream.$new(JavaByteArray);
+
+        return newInputStream;
+      } catch (e) {
+        console.log("Unable to parse", e);
+      }
+    }
+
+    return inputStream;
+  };
+}
+
+function showToast(context, message) {
+  Java.scheduleOnMainThread(function() {
+      var Toast = Java.use("android.widget.Toast");
+      var String = Java.use("java.lang.String");
+      Toast.makeText(context, String.$new(message), Toast.LENGTH_SHORT.value).show();
+      console.log("Showing toast....");
+  });
+}
+
+function showWelcomeToast() {
+  var ActivityThread = Java.use('android.app.ActivityThread');
+
+  var app = ActivityThread.currentApplication();
+  if (app) {
+      showToast(app.getApplicationContext(), "Mod by Jack :)");
+  } else {
+    ActivityThread.handleBindApplication.implementation = function(appData) {
+      this.handleBindApplication(appData);
+      showToast(ActivityThread.currentApplication().getApplicationContext(), "This works!");
+    };
+  }
+}
+
 // GIUSTO: 0x8d1bbc
 function onLibappLoaded() {
     const fn_addr = 0x8d1bc0;
@@ -76,8 +182,11 @@ function tryLoadLibapp() {
     libapp = Module.findBaseAddress('libapp.so');
     if (libapp === null)
         setTimeout(tryLoadLibapp, 200);    
-    else
-        onLibappLoaded();
+    else {
+      onLibappLoaded();
+      Java.perform(bypassAppUpdates)
+      Java.perform(showWelcomeToast);
+    }
 }
 tryLoadLibapp();
 
